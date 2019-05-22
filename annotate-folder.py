@@ -47,7 +47,7 @@ def draw_annotation(event,x,y,flags,param):
         # mask_prev saves every mask rendering in order to get back
         # recursively when 'c' is pressed
         mask_prev.append(mask.copy())
-        cv2.rectangle(mask,(ix,iy),(x,y),(0,50,-50),-1)
+        cv2.rectangle(mask,(ix,iy),(x,y),(0,-200,200),-1)
         kitti_data_cell['label'] = obj_label
         kitti_data_cell['bbox'] = dict()
         kitti_data_cell['bbox']['xmin'] = min(ix,x)
@@ -104,8 +104,8 @@ if __name__ == '__main__':
                 mask_ref = np.zeros((rows, columns, colors), dtype=np.uint8)
                 kitti_data_cell = dict()
                 if(fx != -1 and fy != -1 and lx != -1 and ly != -1):
-                    cv2.rectangle(mask_ref,(fx,fy),(lx,ly),(0,0,50),-1)
-                cv2.imshow('image',img+mask+mask_ref)
+                    cv2.rectangle(mask_ref,(fx,fy),(lx,ly),(0,200,0),-1)
+                cv2.imshow('image',cv2.addWeighted(img+mask+mask_ref, 0.7, img, 0.3, 0))
                 k = cv2.waitKey(1) & 0xFF
                 if k == 27: # Stop annotating the dataset (Esc key)
                     check = 1
