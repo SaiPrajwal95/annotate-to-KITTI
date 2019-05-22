@@ -14,6 +14,7 @@ from shutil import copyfile
 
 # Global variables
 ix,iy = -1,-1 # Iintial mouse point coordinates
+# Prefixes: f -> first, l -> last
 fx, fy, lx, ly = -1,-1,-1,-1 # coordinates to keep track of mouse movement
 draw = False # Enables only on left mouse click
 mask_prev = None # Keeps track of previous renderings
@@ -24,6 +25,14 @@ obj_label = None # Object Label
 
 # mouse callback function
 def draw_annotation(event,x,y,flags,param):
+    """function generates mask renderings depending upon the left mouse button
+    position, and mode of operation.
+    Parameters:
+    event: Refers to the external events of a mouse click.
+    x,y: Posiion of mouse pointer
+    flags: Flags that can be used to enable/disable any features.
+    params: Parameters/thresholds to vary the functionality.
+    """
     # Declaring the following variables as global ensures that the changes
     # made in this function last out of the function
     global ix,iy,draw, fx, fy, lx, ly
@@ -48,10 +57,9 @@ def draw_annotation(event,x,y,flags,param):
         kitti_data.append(kitti_data_cell)
         draw = False
         fx, fy, lx, ly = -1, -1, -1, -1
-    elif event == cv2.EVENT_MOUSEMOVE:
-        if(draw):
-            lx = x
-            ly = y
+    elif (event == cv2.EVENT_MOUSEMOVE and draw):
+        lx = x
+        ly = y
 
 if __name__ == '__main__':
     datasetPath = input('Enter the path to dataset: ')
@@ -67,7 +75,7 @@ if __name__ == '__main__':
 
     if(not exists(destination_annotations_path)):
         mkdir(destination_annotations_path)
-
+    logf = open("logFile.log", "w")
     for datasetImgFile in listdir(datasetPath):
         if isfile(join(datasetPath, datasetImgFile)):
             obj_label = obj_label_default
@@ -75,12 +83,15 @@ if __name__ == '__main__':
             img = cv2.imread(filepath,1)
             try:
                 rows, columns, colors = img.shape
-            except:
+            except Exception as e:
+                logf.write("Failed to open {0}: {1}\n".format(filepath, str(e)))
                 continue
+            logf.write("\nOpened the image {0} for annotation\n".format(filepath))
             destFileName = datasetImgFile.split('.')[0]
             destAnnFile = destination_annotations_path + '/' + destFileName +'.txt'
             destImgFile = destination_images_path + '/' + datasetImgFile
             if(exists(destAnnFile)):
+                logf.write("Annotation already exists for {0}\n".format(filepath))
                 continue
             kitti_data = list()
             mask = np.zeros((rows, columns, colors), dtype=np.uint8)
@@ -100,54 +111,34 @@ if __name__ == '__main__':
                     check = 1
                     break
                 elif k == ord('q'): # Finish annotating present image
+                    logf.write("Ending the annotation process for {0}\n".format(filepath))
                     break
                 elif k == ord('c'): # Cancel annotation for most recent bbox
+                    logf.write("Canceling the previous bbox annotation\n")
                     mask = mask_prev.pop()
                     kitti_data.pop()
                 elif k == ord('l'): # Change the label for next object
+                    logf.write("Changing the label from {0} to ".format(obj_label))
                     obj_label = input('Enter the object label: ')
+                    logf.write("{0}\n".format(obj_label))
                 elif k == ord('n'): # Skip to next image
                     cancel_check = 1
+                    logf.write("Skipping to next image. Annotation not saved.\n")
                     break
-            # End of draw_annotation
+
             cv2.destroyAllWindows()
             if(not (len(kitti_data) == 0) and not(cancel_check)):
-                print(kitti_data[:])
                 # Write the contents into file
                 annotation_file_obj = open(destAnnFile,'w')
-                for objct in kitti_data:
-                    annotation_file_obj.write( '%s' % (objct['label']))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.0f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(objct['bbox']['xmin']))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(objct['bbox']['ymin']))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(objct['bbox']['xmax']))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(objct['bbox']['ymax']))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write(' ')
-                    annotation_file_obj.write('%.2f'%(0))
-                    annotation_file_obj.write('\n')
+                for obj in kitti_data:
+                    annotation_str = "%s %.2f %.0f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n" \
+                    %(obj['label'], 0, 0, 0, obj['bbox']['xmin'], obj['bbox']['ymin'], obj['bbox']['xmax'], \
+                    obj['bbox']['ymax'], 0, 0, 0, 0, 0, 0, 0)
+                    annotation_file_obj.write(annotation_str)
                 annotation_file_obj.close()
                 # Copy the image into separate folder
                 copyfile(filepath,destImgFile)
             if(check): # Corresponding to the Esc key
+                logf.write("Qutting the annotation process\n")
                 break
+    logf.close()
