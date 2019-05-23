@@ -32,8 +32,5 @@ python annotate-folder.py
 * Press 'Esc' key to exit the annotation process. Good thing about this script is that you could continue from where you left off when you start the script again. So, annotate, relax, and continue whenever you can.
 
 ## Results
-#### Sample image from a dataset while being annotated:
-![img ex](https://github.com/SaiPrajwal95/annotate-to-KITTI/blob/master/sample-images/Image_from_dataset_half_annotated.png "Image being annotated")
+![img ex](result/process.gif "Image being annotated")
 
-#### Annotation file in KITTI data format:
-![antn ex](https://github.com/SaiPrajwal95/annotate-to-KITTI/blob/master/sample-images/annotations_generated.png "Annotation file")
