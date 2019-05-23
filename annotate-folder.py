@@ -87,6 +87,12 @@ if __name__ == '__main__':
                 logf.write("Failed to open {0}: {1}\n".format(filepath, str(e)))
                 continue
             logf.write("\nOpened the image {0} for annotation\n".format(filepath))
+            resize_factor = 640.00/max(rows, columns)
+            resized = False
+            if (resize_factor < 1):
+                resized = True
+                img = cv2.resize(img, None, fx=resize_factor,fy=resize_factor)
+                rows, columns, colors = img.shape
             destFileName = datasetImgFile.split('.')[0]
             destAnnFile = destination_annotations_path + '/' + destFileName +'.txt'
             destImgFile = destination_images_path + '/' + datasetImgFile
@@ -131,6 +137,11 @@ if __name__ == '__main__':
                 # Write the contents into file
                 annotation_file_obj = open(destAnnFile,'w')
                 for obj in kitti_data:
+                    if (resized):
+                        obj['bbox']['xmin'] /= resize_factor
+                        obj['bbox']['ymin'] /= resize_factor
+                        obj['bbox']['xmax'] /= resize_factor
+                        obj['bbox']['ymax'] /= resize_factor
                     annotation_str = "%s %.2f %.0f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n" \
                     %(obj['label'], 0, 0, 0, obj['bbox']['xmin'], obj['bbox']['ymin'], obj['bbox']['xmax'], \
                     obj['bbox']['ymax'], 0, 0, 0, 0, 0, 0, 0)
